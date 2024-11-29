@@ -1,0 +1,477 @@
+import java_cup.runtime.Symbol;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Stack;
+import java.util.Arrays;
+
+
+parser code
+{:
+    private Symbol s;
+    private String errorMessage = "";    
+    private String errorMsjSeman = "";
+    private javax.swing.JTextArea txtErroresSintaxis;  // Campo de la interfaz
+    public TablaSimbolos tablaSimbolos = new TablaSimbolos();
+    public boolean esGlobal = true; 
+    public PilaSemantica pilaSemantica = new PilaSemantica();
+    public PilaSemantica pilaSemanticaAux = new PilaSemantica();
+    public Generador generador = new Generador();
+    public String traduccion = "";
+    // Tipo de variable para las declaraciones seguidas
+
+
+    // Constructor que recibe el campo de la interfaz
+    public Sintax(javax.swing.JTextArea txtErroresSintaxis) {
+        this.txtErroresSintaxis = txtErroresSintaxis;
+    }
+
+    public void msjErrorSemantico(String mensaje, Symbol s){
+        errorMsjSeman += "Error Semantico en la linea " + (s.right+1) + " columna " + (s.left+1) + ", " + mensaje + "\n";
+        System.err.println("Error Semantico" + s.value +" Linea "+(s.right+1)+" columna "+(s.left+1));
+
+    }
+
+    public void mensajeDeError(String mensaje){
+        errorMessage += "Error R de sintaxis en la linea " + (s.right+1) + " columna " + (s.left+1) + ", " + mensaje;
+        System.err.println("Error R de sintaxis: token" + s.value +" Linea "+(s.right+1)+" columna "+(s.left+1));
+
+        String tokenValue = s.value != null ? s.value.toString() : "símbolo desconocido";
+
+        // Personalizar el mensaje de error según el valor del símbolo
+        switch (tokenValue) {
+            case "{":
+                this.errorMessage += ": Se esperaba ‘=’, ‘,’, ‘;’ o ‘(atributos)’ antes del token ‘{’ \n";
+                break;
+            default:
+                this.errorMessage += ": Token inesperado ‘" + tokenValue + "’ \n";
+        }
+    }
+    public void syntax_error(Symbol s) {
+        this.s = s;
+        /*
+        String tokenValue = s.value != null ? s.value.toString() : "símbolo desconocido";
+
+        // Personalizar el mensaje de error según el valor del símbolo
+        switch (tokenValue) {
+            case "{":
+                this.errorMessage += ": Se esperaba ‘=’, ‘,’, ‘;’ o ‘(atributos)’ antes del token ‘{’ \n";
+                break;
+            default:
+                this.errorMessage += ": Token inesperado ‘" + tokenValue + "’ \n";
+        }
+        */
+        
+    }
+
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{ 
+        this.s = s;
+        errorMessage += "Error NR de sintaxis: token "+ s.value +" Linea "+(s.right+1)+" columna "+(s.left+1) + "\n";
+        System.err.println("Error NR de sintaxis: token " + s.value +" Linea "+(s.right+1)+" columna "+(s.left+1));
+    }
+
+    public String getErrorMessage() {
+        return this.errorMessage;
+    }
+
+    public String getSemanErrors() {
+        return this.errorMsjSeman;
+    }
+
+    public Symbol getS(){
+        return this.s;
+    }
+
+    public String getTablaSimbolos(){
+        return tablaSimbolos.getTablaSimStr();
+    }
+
+    public PilaSemantica getPilaSemantica(){
+        return pilaSemantica;
+    }
+
+    public String getTraduccion(){
+        return traduccion;
+    }
+
+    public void addTraduccion(String codigoTraducido){
+        traduccion += codigoTraducido;
+    }
+
+    public void addListaVariables(PilaSemantica pilaAux){
+        int size = pilaAux.size();
+        String variable = "";
+        for(int i = 0; i < size; i++){
+            variable = pilaAux.pop_init();
+            pilaSemantica.push_end(variable);
+        }
+    }
+:};
+
+// DECLARACION DE TERMINALES  
+terminal Int, Long, Short, Char, Const, Identificador, Igual, PuntoYComa, Coma, DosPuntos, 
+        Entero, Caracter, Error, Sum, Res, Mul, Div, Mod, P_Abierto, P_Cerrado,
+        Sum_Igual, Res_Igual, Mul_Igual, Div_Igual, Incremento, Decremento,
+        Llave_Abierta, Llave_Cerrada, Igual_Igual, Mayor_Igual, Mayor, Menor_Igual,
+        Menor, Diferente, Or, And, Not, If, Else, For, While, Switch, Case, Default, Break,
+        Read, Write, Void, Return, Do, Continue;
+
+// DECLARACION DE NO TERMINALES
+non terminal INICIO, FUNCIONES, FUNCION, PARAMETROS, PARAMETRO,
+            CONTROL_PARAMETROS, VARIABLES, VARIABLE, TIPO_VAR, INI_VAR, 
+            VALOR_VAR, VALOR, LIST_ID_VAR, VARIABLE_DEC, LIST_ID_VAR_DEC, 
+            EXP_ARITMETICA, EXP_ARITMETICA_P, OP_ARITMETICO, OP_ASIGNACION, 
+            OP_INCREMENTO, EXP_BOOLEANA, EXP_BOOLEANA_P, EXP_NEGACION, 
+            EXP_COMPARATIVA, OP_COMPARACION, OP_LOGICO, OP_NEGACION,
+            CONTROLES, CONTROL, CUERPO_CONTROL, CONTROL_IF, EXPRESIONES,
+            CONTROL_FOR, INI_FOR, CONTENIDO_CONTROL,
+            CONTENIDOS_CONTROL, CONTROL_WHILE,
+            CONTROL_SWITCH, CONTROL_CASE, BLOQUES_CASE, BLOQUE_CASE, FIN_BLOQUE, 
+            OP_DEFAULT,
+            FUNC_READ, FUNC_WRITE, PARAM_READ, PARAMS_WRITE, VARIABLE_DEC_SIMPLE, 
+            EXP_FUNC_WRITE;
+
+// NO TERMINAL INICIAL
+start with INICIO;
+
+
+// DECLARACION DE GRAMATICA 
+
+// debe contener al menos una funcion y cero o varias variables 
+INICIO ::= VARIABLES FUNCIONES 
+        | FUNCIONES ;
+
+// una o mas declaraciones de funciones 
+FUNCIONES ::= FUNCIONES FUNCION 
+            | FUNCION 
+            ;
+
+// declaracion de una funcion 
+FUNCION ::= TIPO_VAR:var Identificador:id P_Abierto CONTROL_PARAMETROS P_Cerrado CUERPO_CONTROL{:
+                if(parser.tablaSimbolos.existeSimbolo(id.toString(), "funciones")){
+                    // si existe dar el error semantico
+
+                }else{
+                    parser.tablaSimbolos.agregarSimbolo(id.toString(), var.toString(), "funciones");
+                }
+            :}       
+            | Void Identificador:id P_Abierto CONTROL_PARAMETROS P_Cerrado CUERPO_CONTROL{:
+                if(parser.tablaSimbolos.existeSimbolo(id.toString(), "funciones")){
+                    // si existe dar el error semantico
+
+                }else{
+                    parser.tablaSimbolos.agregarSimbolo(id.toString(), "void", "funciones");
+                }
+                
+            :}       
+            | error Llave_Cerrada {:
+                String mensaje = "Error en la declaración de funciones";
+                parser.mensajeDeError(mensaje);
+            :}
+            ;
+
+// Declaración de parámetros en funciones (puede ser vacío)
+CONTROL_PARAMETROS ::= PARAMETROS | /* vacío */     ;
+
+PARAMETROS ::= PARAMETRO Coma PARAMETROS | PARAMETRO ;
+
+PARAMETRO ::= TIPO_VAR:var Identificador:id {:
+                if(parser.tablaSimbolos.existeSimbolo(id.toString(), "parametros")){
+                    // si existe dar el error semantico
+
+                }else{
+                    parser.tablaSimbolos.agregarSimbolo(id.toString(), var.toString(), "parametros");
+                }
+                // las variables dejan de ser globales una vez dentro de una funcion
+                parser.esGlobal = false;
+            :} ;
+
+// DECLARACION DE VARIABLES  
+VARIABLES ::= VARIABLES VARIABLE | VARIABLE ;
+
+/*
+Las variables pueden aparecer de 3 formas:
+    1. Con tipo: int a; o int a = 20; 
+    2. Constantes: const int a; o const int a = 20;
+    3. Variables ya declaradas: a += 1; o a++; o --a;
+Además cada una puede aparecer en forma de lista:  
+    tipo forma_1, forma_1, forma_1;
+    const tipo forma_2, forma_2, forma_2;
+    forma_3, forma_3, forma_3;  
+*/
+VARIABLE ::= TIPO_VAR:var Identificador:id INI_VAR LIST_ID_VAR:list_vars PuntoYComa {:
+                String tipoVariable = parser.esGlobal ? "variables globales" : "variables locales";
+                if(parser.tablaSimbolos.existeSimbolo(id.toString(), tipoVariable)){
+                    // si existe dar el error semantico
+                    Symbol tokenAct = (Symbol)CUP$Sintax$stack.elementAt(CUP$Sintax$top-1);
+                    parser.msjErrorSemantico("variable ya declarada", tokenAct);
+
+                }else{
+                    parser.tablaSimbolos.agregarSimbolo(id.toString(), var.toString(), tipoVariable);
+                    parser.tablaSimbolos.asignarTipo(var.toString());
+                    if(tipoVariable == "variables globales"){
+                        parser.pilaSemantica.push_end(var.toString());
+                        //agregar la lista de variables en caso existir 
+                        parser.addListaVariables(parser.pilaSemanticaAux);
+                        // agregar la primer variable de la lista 
+                        parser.pilaSemantica.push_end(id.toString());
+                        // realizar la traduccion de las variables globales
+                        parser.addTraduccion(parser.generador.traducirVariablesGlobales(parser.pilaSemantica)); 
+                    }
+                }
+                
+            :} 
+            |  Const TIPO_VAR:var Identificador:id INI_VAR LIST_ID_VAR PuntoYComa  {:
+                String tipoVariable = parser.esGlobal ? "variables globales" : "variables locales";
+                if(parser.tablaSimbolos.existeSimbolo(id.toString(), tipoVariable)){
+                    // si existe dar el error semantico
+                    System.out.println("Da Error Semantico"); // provisional
+
+                }else{
+                    parser.tablaSimbolos.agregarSimbolo(id.toString(), var.toString(), tipoVariable);
+                    parser.tablaSimbolos.asignarTipo(var.toString());                    
+                }
+                parser.pilaSemanticaAux.clear();
+            :} 
+            |  VARIABLE_DEC PuntoYComa
+            | error PuntoYComa {:
+                String mensaje = "Error de inicializacion de variable(falta tipo)";
+                parser.mensajeDeError(mensaje);
+
+            :}
+            | Void error PuntoYComa {:
+                String mensaje = "Error de inicializacion de variable tipo void";
+                parser.mensajeDeError(mensaje);
+            :}
+
+            ;
+
+TIPO_VAR ::= Int         {: RESULT = "int"; :}
+           | Char        {: RESULT = "char"; :}
+           | Short       {: RESULT = "short"; :}
+           | Long        {: RESULT = "long"; :}
+           | Long Long   {: RESULT = "long long"; :}
+           | Short Int   {: RESULT = "short int"; :}
+           | Long Int    {: RESULT = "long int"; :}
+           | Long Long Int {: RESULT = "long long int"; :} ;
+
+INI_VAR ::= Igual VALOR_VAR | /* vacío */ ;   
+VALOR_VAR ::=  EXP_ARITMETICA | EXP_BOOLEANA;
+LIST_ID_VAR ::= Coma Identificador:id INI_VAR LIST_ID_VAR: list_vars  {:
+            String tipoVariable = parser.esGlobal ? "variables globales" : "variables locales";
+            if(parser.tablaSimbolos.existeSimbolo(id.toString(), tipoVariable)){
+                // si existe dar el error semantico
+                System.out.println("Da Error Semantico"); // provisional
+
+            }else{
+                parser.tablaSimbolos.agregarSimbolo(id.toString(), "", tipoVariable);
+                parser.pilaSemanticaAux.push_end(id.toString());
+            }
+        :} 
+        | /* vacío */ ;
+
+// variables que ya estan declaradas 
+VARIABLE_DEC ::= 
+                Identificador:id OP_ASIGNACION VALOR_VAR LIST_ID_VAR_DEC {:
+                    if(!(parser.tablaSimbolos.existeSimbolo(id.toString()))){
+                        // si no existe dar el error semantico
+                        Symbol tokenAct = (Symbol)CUP$Sintax$stack.elementAt(CUP$Sintax$top-1);
+                        parser.msjErrorSemantico("variable no definida", tokenAct);
+                    }
+                :} 
+                |   OP_INCREMENTO Identificador:id LIST_ID_VAR_DEC {:
+                    if(!(parser.tablaSimbolos.existeSimbolo(id.toString()))){
+                        // si no existe dar el error semantico
+                        Symbol tokenAct = (Symbol)CUP$Sintax$stack.elementAt(CUP$Sintax$top-1);
+                        parser.msjErrorSemantico("variable no definida", tokenAct);
+                    }
+                :} 
+                |   Identificador:id OP_INCREMENTO LIST_ID_VAR_DEC {:
+                    if(!(parser.tablaSimbolos.existeSimbolo(id.toString()))){
+                        // si no existe dar el error semantico
+                        Symbol tokenAct = (Symbol)CUP$Sintax$stack.elementAt(CUP$Sintax$top-1);
+                        parser.msjErrorSemantico("variable no definida", tokenAct);
+                    }
+                :} 
+                ; 
+LIST_ID_VAR_DEC ::= Coma VARIABLE_DEC | /* vacío */ ;
+
+// variable ya declarada sin recursividad 
+VARIABLE_DEC_SIMPLE ::=
+                    Identificador:id OP_ASIGNACION VALOR_VAR {:
+                        if(!(parser.tablaSimbolos.existeSimbolo(id.toString()))){
+                            // si no existe dar el error semantico
+                            Symbol tokenAct = (Symbol)CUP$Sintax$stack.elementAt(CUP$Sintax$top-1);
+                            parser.msjErrorSemantico("variable no definida", tokenAct);
+                        }
+                    :} 
+                    | OP_INCREMENTO Identificador:id {:
+                        if(!(parser.tablaSimbolos.existeSimbolo(id.toString()))){
+                            // si no existe dar el error semantico
+                            Symbol tokenAct = (Symbol)CUP$Sintax$stack.elementAt(CUP$Sintax$top-1);
+                            parser.msjErrorSemantico("variable no definida", tokenAct);
+                        }
+                    :} 
+                    | Identificador:id OP_INCREMENTO {:
+                        if(!(parser.tablaSimbolos.existeSimbolo(id.toString()))){
+                            // si no existe dar el error semantico
+                            Symbol tokenAct = (Symbol)CUP$Sintax$stack.elementAt(CUP$Sintax$top-1);
+                            parser.msjErrorSemantico("variable no definida", tokenAct);
+                        }
+                    :} 
+                    ;
+
+// expresiones aritmeticas 
+EXP_ARITMETICA ::= EXP_ARITMETICA OP_ARITMETICO EXP_ARITMETICA_P | EXP_ARITMETICA_P;
+EXP_ARITMETICA_P ::= P_Abierto EXP_ARITMETICA P_Cerrado | VALOR ;
+VALOR ::= Entero | Res Entero | Caracter | Identificador:id {:
+                    if(!(parser.tablaSimbolos.existeSimbolo(id.toString()))){
+                        // si no existe dar el error semantico
+                        Symbol tokenAct = (Symbol)CUP$Sintax$stack.elementAt(CUP$Sintax$top-1);
+                        parser.msjErrorSemantico("variable no definida", tokenAct);
+                    }
+                :} 
+                // pueden venir llamadas a funciones declaradas
+                | Identificador:id P_Abierto EXP_FUNC_WRITE PARAMS_WRITE P_Cerrado {:
+                    if(!(parser.tablaSimbolos.existeSimbolo(id.toString()))){
+                        // si no existe dar el error semantico
+                        Symbol tokenAct = (Symbol)CUP$Sintax$stack.elementAt(CUP$Sintax$top-1);
+                        parser.msjErrorSemantico("funcion no definida", tokenAct);
+                    }
+                :} 
+                // pueden venir llamadas a funciones declaradas sin parametros
+                | Identificador:id P_Abierto P_Cerrado {:
+                    if(!(parser.tablaSimbolos.existeSimbolo(id.toString()))){
+                        // si no existe dar el error semantico
+                        Symbol tokenAct = (Symbol)CUP$Sintax$stack.elementAt(CUP$Sintax$top-1);
+                        parser.msjErrorSemantico("funcion no definida", tokenAct);
+                    }
+                :} ;   
+
+// Operadores 
+OP_ARITMETICO ::= Sum | Res | Div | Mul | Mod ;
+OP_INCREMENTO ::= Incremento | Decremento ; 
+OP_ASIGNACION ::= Igual | Sum_Igual | Res_Igual | Mul_Igual | Div_Igual ;
+
+// expresiones booleanas
+EXP_BOOLEANA ::= EXP_BOOLEANA OP_LOGICO EXP_BOOLEANA_P | EXP_BOOLEANA_P;
+EXP_BOOLEANA_P ::= P_Abierto EXP_BOOLEANA P_Cerrado | EXP_COMPARATIVA 
+                | OP_NEGACION P_Abierto EXP_BOOLEANA P_Cerrado
+                | EXP_NEGACION;
+EXP_COMPARATIVA ::= VALOR OP_COMPARACION VALOR; 
+EXP_NEGACION ::= OP_NEGACION VALOR;
+
+
+// operadores booleanos
+OP_COMPARACION ::= Igual_Igual | Mayor_Igual | Mayor | Menor_Igual | Menor | Diferente;
+OP_LOGICO ::= Or | And ;
+OP_NEGACION ::= Not;
+
+CONTROLES ::= CONTROL CONTROLES 
+            | CONTROL;
+
+CONTROL ::= CONTROL_IF
+            | CUERPO_CONTROL
+            | CONTROL_FOR
+            | CONTROL_SWITCH
+            | CONTROL_WHILE ; 
+
+CUERPO_CONTROL ::=  Llave_Abierta CONTENIDOS_CONTROL Llave_Cerrada
+                     
+                    ;
+CONTENIDOS_CONTROL ::=  CONTENIDO_CONTROL CONTENIDOS_CONTROL
+                        | /*vacio*/ ;                           // puede no venir nada
+
+CONTENIDO_CONTROL ::=  VARIABLE                    // pueden venir asignaciones
+            | CONTROL                          // pueden venir mas estructuras de control
+            | FUNC_READ                         // pueden venir funciones read              
+            | FUNC_WRITE                       // pueden venir funciones write
+            | Return VALOR_VAR PuntoYComa       // pueden venir returns
+            | Break PuntoYComa                  // pueden venir breaks
+            | Continue PuntoYComa   ;           // pueden venir continues
+
+CONTROL_IF ::= If P_Abierto EXPRESIONES P_Cerrado CUERPO_CONTROL 
+            | If P_Abierto EXPRESIONES P_Cerrado CUERPO_CONTROL Else CUERPO_CONTROL 
+            | If error Llave_Cerrada {:
+            String mensaje = "Error en estructura de control if-else";
+            parser.mensajeDeError(mensaje);
+            :}  
+            ;
+
+CONTROL_FOR ::= For P_Abierto INI_FOR EXP_BOOLEANA PuntoYComa EXPRESIONES P_Cerrado CUERPO_CONTROL        // el for normal
+                | For P_Abierto INI_FOR PuntoYComa EXPRESIONES P_Cerrado CUERPO_CONTROL                   // for sin condicion booleana
+                | For P_Abierto INI_FOR EXP_BOOLEANA PuntoYComa P_Cerrado CUERPO_CONTROL                  // for sin expresion
+                | For P_Abierto INI_FOR PuntoYComa P_Cerrado CUERPO_CONTROL
+                | For error Llave_Cerrada {:
+                parser.mensajeDeError("Error en la estructura del for requiere paréntesis o puntos y comas");
+                :}
+                | For P_Abierto INI_FOR error P_Cerrado CUERPO_CONTROL {:
+                    parser.mensajeDeError("Error en las expresiones de control dentro del for");
+                :};
+// inicializar la variable del for
+INI_FOR ::=  TIPO_VAR:var Identificador:id INI_VAR LIST_ID_VAR PuntoYComa {:
+                if(parser.tablaSimbolos.existeSimbolo(id.toString(), "variables locales")){
+                    // si existe dar el error semantico
+
+                }else{
+                    parser.tablaSimbolos.agregarSimbolo(id.toString(), var.toString(), "variables locales");
+                }
+                parser.pilaSemanticaAux.clear();
+            :} 
+            |  VARIABLE_DEC PuntoYComa
+            | PuntoYComa ;                         // puede no venir nada
+
+CONTROL_WHILE ::= While P_Abierto EXPRESIONES P_Cerrado CUERPO_CONTROL
+                | While P_Abierto EXPRESIONES P_Cerrado PuntoYComa       // un while sin bloque
+                | While error Llave_Cerrada {:
+                    String mensaje = "Error en estructura de while: se esperaba '(' y ')'";
+                    parser.mensajeDeError(mensaje);
+                :}
+                | While P_Abierto error P_Cerrado {:  // Error en la expresión dentro de while
+                    String mensaje = "Error en la expresión dentro del while";
+                    parser.mensajeDeError(mensaje);
+                :};
+CONTROL_SWITCH ::= Switch P_Abierto EXP_ARITMETICA P_Cerrado Llave_Abierta CONTROL_CASE Llave_Cerrada   
+                   |Switch error Llave_Cerrada {:
+                    parser.mensajeDeError("Error en estructura de switch: se esperaba expresión aritmética entre paréntesis");:};
+                    
+CONTROL_CASE ::= BLOQUES_CASE OP_DEFAULT ;
+
+BLOQUES_CASE ::= BLOQUE_CASE BLOQUES_CASE
+               | /*vacio*/ ;
+
+BLOQUE_CASE ::= Case Entero DosPuntos CONTENIDOS_CONTROL FIN_BLOQUE;
+
+OP_DEFAULT ::= Default DosPuntos CONTENIDOS_CONTROL FIN_BLOQUE 
+              | /*vacio*/ ;
+
+FIN_BLOQUE ::= PuntoYComa
+            | /*vacio*/ ;
+
+// funcion read puede o no recibir un Identificador como parametro 
+FUNC_READ ::= Read P_Abierto PARAM_READ P_Cerrado PuntoYComa
+            | Read error PuntoYComa {:
+            String mensaje = "Error en funcion read";
+            parser.mensajeDeError(mensaje);
+            :}  
+            ;  
+
+PARAM_READ ::= Identificador | /*vacio*/    ;
+
+// funcion write contiene al menos una expresion como parametro
+FUNC_WRITE ::= Write P_Abierto EXP_FUNC_WRITE PARAMS_WRITE P_Cerrado PuntoYComa 
+            |   Identificador P_Abierto EXP_FUNC_WRITE PARAMS_WRITE P_Cerrado PuntoYComa 
+            |   Identificador P_Abierto  P_Cerrado PuntoYComa   
+            | Write error PuntoYComa {:
+            String mensaje = "Error en funcion write";
+            parser.mensajeDeError(mensaje);
+            :}  
+            ;  
+
+PARAMS_WRITE ::= Coma EXP_FUNC_WRITE PARAMS_WRITE | /*vacio*/  ;
+
+EXP_FUNC_WRITE ::= EXP_ARITMETICA | EXP_BOOLEANA | VARIABLE_DEC_SIMPLE  ;
+
+// la expresion puede ser cualquier tipo incluso asignacion
+EXPRESIONES ::=  EXP_ARITMETICA | EXP_BOOLEANA | VARIABLE_DEC;

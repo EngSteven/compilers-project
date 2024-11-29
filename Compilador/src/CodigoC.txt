@@ -1,0 +1,180 @@
+// Pruebas de declaracion de variables
+const int x;
+const int x = 1;
+int x;
+char f = 'a';
+int s = 20;
+int s = '1';
+int n = -10;
+char a = 10;
+char a = '0';
+int z, a, s;
+int t, r = 10;
+int t = 10, r = 10, m = 11;
+char t = 20, r = 10;
+short a;
+long a;
+long long a;
+long int a;
+long long int a;
+short int a;
+
+// asignando expresiones aritmeticas
+int a = 1+2+'a'-1;
+int a = 1%2;
+int a = 1-2;
+int a = 1*2/10;
+int a = (1+2)+2;
+int a = 2+(1+2);
+int a = 2+3+(1+1);
+int a = 2+3+(1+1)+(1+1);
+int a = 2+3+(1+1+2)+(1+1)+3;
+int a = (2*(1+1)*3%(10-2));
+
+int a = 10;
+a += 1;
+a -= 1;
+a *= 1;
+a /= 1, a -= 1, a = 2;
+a /= 1, ++ a, a = 2, a--;
+
+// asignando expresiones booleanas
+int resultado = (a == b); 
+int resultado = (a >= b); 
+int resultado = (a > b); 
+int resultado = (a <= b); 
+int resultado = (a < b); 
+int resultado = (a != b); 
+int resultado = (a < 3 || b > 8); 
+resultado = (a > 3 && b < 15); 
+int resultado = !(a == 5);
+resultado = (a < b) && (c >= d) || (a == 5) && !(b != c) || (d > a && c < b);
+int resultado = !a;
+int resultado = !5;
+
+void prueba(){
+	int a = 10;
+}
+int prueba(){
+	int a = 10;
+}
+char prueba(){
+	int a = 10;
+}
+long prueba(){
+	int a = 10;
+}
+
+void main(int q, char a){
+	int a = 10;
+	read();
+	write(a);
+
+	// probando estructuras de control
+	if (a -= 5) {
+		// Sentencias
+		a += 1;
+	}
+
+	if (d = 45) {
+			if(!a){
+			resultado = (a < b) && (c >= d) || (a == 5) && !(b != c) || (d > a && c < b);
+			// for sin inicializacion
+			for (; j < 3; ++j) {
+					i += j;
+			}
+
+
+		}	
+		while (1) {
+				if (a == b) {
+					a += 5;
+				}
+		}
+	} else {
+		if(a == 1){
+			a /= 1, a -= 1, a = 2;
+
+		}
+		// for normal
+		for (int i = 0; i < 3; i++) {
+			// for sin expresion
+				for (int j = 0;;j++) {
+						i += j;
+				}
+			}
+
+	}
+
+	// for sin nada
+	for (;;) {
+		// for sin incremento
+		for (int j = 0; j < 3;) {
+				i += j;
+		}
+	}
+
+	// for con varias inicializaciones e incrementos
+	for (int i = 0, j = 5; i < j; i++, j--) {
+		a = i + j;
+	}
+
+	// for sin inicializacion e incremento
+	for (; i < j;) {
+		a = i + j;
+	}
+
+	// for sin expresion e incremento
+	for (int i = 0;;) {
+		a = i + j;
+	}
+
+	while (contador < 10) {
+		contador++;
+	}
+
+	while (condicion); 
+
+
+	// probando switch
+	switch (a) {
+		
+	}
+	switch (a) {
+		case 1:
+	}
+	switch (a) {
+		case 1:
+			break;
+	}
+	switch (a) {
+		case 1:
+			break;
+		default:
+	}
+	switch (a) {
+		case 1:
+			break;
+		default: break;
+	}
+	switch (a) {
+		default: break;
+	}
+	switch (a) {
+		case 1:
+			read(a);
+			read();
+			write(a);
+			write(a,b);
+			write(1+1, a=10, a++, 'a', a>1);
+			switch (b) {
+				case 2:
+					a = 12;
+					break;
+			}
+			break;
+		case 2:
+			int b = 1;
+			break;
+	}
+}
